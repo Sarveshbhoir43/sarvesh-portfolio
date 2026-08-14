@@ -1,395 +1,983 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
+import type { ComponentType, CSSProperties } from "react";
 import {
-  motion,
-  useInView,
-  useReducedMotion,
+    motion,
+    useScroll,
+    useTransform,
+    useMotionValue,
+    useMotionTemplate,
+    useSpring,
+    useReducedMotion,
 } from "framer-motion";
+
 import {
-  Code2,
-  Database,
-  Globe,
-  Rocket,
-  GraduationCap,
-  ArrowUpRight,
-} from "lucide-react";
+    SiHtml5,
+    SiCss,
+    SiOpenjdk,
+    SiCplusplus,
+    SiMysql,
+    SiReact,
+    SiNextdotjs,
+    SiSupabase,
+} from "react-icons/si";
+
+import { Terminal, Layers3, Code2, Folder } from "lucide-react";
 
 /* =========================================================
    TYPES
 ========================================================= */
 
-interface JourneyItem {
-  year: string;
-  title: string;
-  description: string;
-  technologies?: string[];
-  icon: React.ReactNode;
-  featured?: boolean;
+type JourneyIcon = ComponentType<{
+    size?: number;
+    className?: string;
+    style?: CSSProperties;
+}>;
+
+interface JourneyEntry {
+    name: string;
+    icon: JourneyIcon;
+    color: string;
+}
+
+interface JourneyStop {
+    year: string;
+    phase: string;
+    description: string;
+    kind: "technologies" | "projects";
+    items: JourneyEntry[];
+    current?: boolean;
 }
 
 /* =========================================================
    JOURNEY DATA
 ========================================================= */
 
-const journey: JourneyItem[] = [
-  {
-    year: "2023",
-    title: "The Beginning",
-    description:
-      "Started my programming journey by learning the fundamentals of web development and programming.",
-    technologies: ["HTML", "CSS", "C"],
-    icon: <Code2 size={20} strokeWidth={1.7} />,
-  },
-
-  {
-    year: "2024",
-    title: "Building the Foundation",
-    description:
-      "Expanded my programming knowledge and started working with databases while strengthening my core development skills.",
-    technologies: ["Java", "C++", "MySQL"],
-    icon: <Database size={20} strokeWidth={1.7} />,
-  },
-
-  {
-    year: "2025",
-    title: "Modern Web Development",
-    description:
-      "Moved into modern web development and started building applications using modern frontend frameworks and backend services.",
-    technologies: ["React", "Next.js", "Supabase"],
-    icon: <Globe size={20} strokeWidth={1.7} />,
-  },
-
-  {
-    year: "2025",
-    title: "Built Real Projects",
-    description:
-      "Turned my knowledge into real-world projects, focusing on functional applications and polished user experiences.",
-    technologies: [
-      "AI Interview Screener",
-      "Gym Progress",
-      "Royal Stay Hotel",
-    ],
-    icon: <Rocket size={20} strokeWidth={1.7} />,
-    featured: true,
-  },
-
-  {
-    year: "2026",
-    title: "Currently Growing",
-    description:
-      "Continuing to improve my development skills while focusing on Java, full-stack development and software development.",
-    technologies: [
-      "Java",
-      "Full-Stack Development",
-      "Software Development",
-    ],
-    icon: <GraduationCap size={20} strokeWidth={1.7} />,
-  },
+const journey: JourneyStop[] = [
+    {
+        year: "2023",
+        phase: "The Beginning",
+        description:
+            "Started my programming journey by learning the fundamentals of web development and programming.",
+        kind: "technologies",
+        items: [
+            { name: "HTML", icon: SiHtml5, color: "#E34F26" },
+            { name: "CSS", icon: SiCss, color: "#1572B6" },
+            { name: "C", icon: Terminal, color: "#A8B9CC" },
+        ],
+    },
+    {
+        year: "2024",
+        phase: "Building the Foundation",
+        description:
+            "Expanded my programming knowledge and started working with databases while strengthening my core development skills.",
+        kind: "technologies",
+        items: [
+            { name: "Java", icon: SiOpenjdk, color: "#ED8B00" },
+            { name: "C++", icon: SiCplusplus, color: "#00599C" },
+            { name: "MySQL", icon: SiMysql, color: "#4479A1" },
+        ],
+    },
+    {
+        year: "2025",
+        phase: "Modern Web Development",
+        description:
+            "Moved into modern web development and started building applications using modern frontend frameworks and backend services.",
+        kind: "technologies",
+        items: [
+            { name: "React", icon: SiReact, color: "#61DAFB" },
+            { name: "Next.js", icon: SiNextdotjs, color: "#FFFFFF" },
+            { name: "Supabase", icon: SiSupabase, color: "#3ECF8E" },
+        ],
+    },
+    {
+        year: "2025",
+        phase: "Built Real Projects",
+        description:
+            "Turned my knowledge into real-world projects, focusing on functional applications and polished user experiences.",
+        kind: "projects",
+        items: [
+            { name: "AI Interview Screener", icon: Folder, color: "#D8CFBC" },
+            { name: "Gym Progress", icon: Folder, color: "#D8CFBC" },
+            { name: "Royal Stay Hotel", icon: Folder, color: "#D8CFBC" },
+        ],
+    },
+    {
+        year: "2026",
+        phase: "Currently Growing",
+        description:
+            "Continuing to improve my development skills while focusing on Java, full-stack development and software development.",
+        kind: "technologies",
+        items: [
+            { name: "Java", icon: SiOpenjdk, color: "#ED8B00" },
+            {
+                name: "Full-Stack Development",
+                icon: Layers3,
+                color: "#D8CFBC",
+            },
+            {
+                name: "Software Development",
+                icon: Code2,
+                color: "#D8CFBC",
+            },
+        ],
+        current: true,
+    },
 ];
 
 /* =========================================================
-   JOURNEY ITEM
+   TIMELINE NODE
 ========================================================= */
 
-function JourneyItemCard({
-  item,
-  index,
-  enableMotion,
+function JourneyNode({
+    current,
+    enableMotion,
 }: {
-  item: JourneyItem;
-  index: number;
-  enableMotion: boolean;
+    current: boolean;
+    enableMotion: boolean;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  const isInView = useInView(ref, {
-    once: true,
-    amount: 0.25,
-  });
-
-  return (
-    <div
-      ref={ref}
-      className="relative grid grid-cols-[70px_1fr] gap-5 sm:grid-cols-[110px_1fr] sm:gap-8"
-    >
-      {/* YEAR */}
-
-      <motion.div
-        initial={
-          enableMotion
-            ? {
-                opacity: 0,
-                x: -20,
-              }
-            : false
-        }
-        animate={
-          isInView && enableMotion
-            ? {
-                opacity: 1,
-                x: 0,
-              }
-            : undefined
-        }
-        transition={{
-          duration: 0.6,
-          delay: index * 0.08,
-        }}
-        className="pt-1 text-right"
-      >
-        <span className="text-sm font-medium tracking-[0.12em] text-[#D8CFBC] sm:text-base">
-          {item.year}
-        </span>
-      </motion.div>
-
-      {/* TIMELINE */}
-
-      <div className="relative pb-16 sm:pb-20">
-        {/* Timeline dot */}
-
-        <motion.div
-          initial={
-            enableMotion
-              ? {
-                  scale: 0,
-                  opacity: 0,
-                }
-              : false
-          }
-          animate={
-            isInView && enableMotion
-              ? {
-                  scale: 1,
-                  opacity: 1,
-                }
-              : undefined
-          }
-          transition={{
-            duration: 0.45,
-            delay: index * 0.08 + 0.1,
-            type: "spring",
-            stiffness: 220,
-            damping: 18,
-          }}
-          className="absolute -left-[42px] top-0 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-[#565449] bg-[#151610] text-[#D8CFBC] shadow-[0_0_25px_-8px_rgba(216,207,188,0.8)] sm:-left-[52px]"
+    return (
+        <motion.span
+            initial={
+                enableMotion
+                    ? { scale: 0, opacity: 0 }
+                    : false
+            }
+            whileInView={
+                enableMotion
+                    ? { scale: 1, opacity: 1 }
+                    : undefined
+            }
+            viewport={{
+                once: true,
+                amount: 0.8,
+            }}
+            transition={{
+                duration: 0.45,
+                ease: "easeOut",
+            }}
+            className={`relative flex h-4 w-4 items-center justify-center rounded-full border-2 border-[#D8CFBC] ${current
+                    ? "bg-[#D8CFBC]"
+                    : "bg-[#11120D]"
+                }`}
         >
-          {item.icon}
-        </motion.div>
+            {/* Inner glow */}
+            <span
+                className={`h-1.5 w-1.5 rounded-full ${current
+                        ? "bg-[#11120D]"
+                        : "bg-[#D8CFBC]/60"
+                    }`}
+            />
 
-        {/* CARD */}
-
-        <motion.div
-          initial={
-            enableMotion
-              ? {
-                  opacity: 0,
-                  y: 30,
-                }
-              : false
-          }
-          animate={
-            isInView && enableMotion
-              ? {
-                  opacity: 1,
-                  y: 0,
-                }
-              : undefined
-          }
-          transition={{
-            duration: 0.7,
-            delay: index * 0.08 + 0.15,
-            ease: [0.22, 1, 0.36, 1],
-          }}
-          whileHover={
-            enableMotion
-              ? {
-                  y: -4,
-                }
-              : undefined
-          }
-          className={`group relative overflow-hidden rounded-3xl border p-6 transition-all duration-500 sm:p-8 ${
-            item.featured
-              ? "border-[#565449] bg-[#181914] hover:border-[#77746B]"
-              : "border-[#302F29] bg-[#151610] hover:border-[#565449]"
-          }`}
-        >
-          {/* Glow */}
-
-          <div className="pointer-events-none absolute -right-24 -top-24 h-48 w-48 rounded-full bg-[#D8CFBC]/[0.035] opacity-0 blur-[70px] transition-opacity duration-700 group-hover:opacity-100" />
-
-          {/* Top content */}
-
-          <div className="relative z-10">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="mb-2 text-xs uppercase tracking-[0.25em] text-[#5F5D56]">
-                  {item.featured
-                    ? "Real World Projects"
-                    : "Milestone"}
-                </p>
-
-                <h3 className="text-2xl font-semibold tracking-tight text-[#FFFBF4] transition-colors duration-300 group-hover:text-[#D8CFBC] sm:text-3xl">
-                  {item.title}
-                </h3>
-              </div>
-
-              <div className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#302F29] text-[#5F5D56] transition-all duration-500 group-hover:border-[#565449] group-hover:text-[#D8CFBC] sm:flex">
-                <ArrowUpRight size={16} />
-              </div>
-            </div>
-
-            {/* Description */}
-
-            <p className="mt-5 max-w-2xl text-sm leading-7 text-[#77746B] sm:text-[15px]">
-              {item.description}
-            </p>
-
-            {/* Technologies */}
-
-            {item.technologies && (
-              <div className="mt-6 flex flex-wrap gap-2">
-                {item.technologies.map(
-                  (technology, techIndex) => (
+            {/* Current pulse */}
+            {current && enableMotion && (
+                <>
                     <motion.span
-                      key={technology}
-                      initial={
-                        enableMotion
-                          ? {
-                              opacity: 0,
-                              scale: 0.9,
-                            }
-                          : false
-                      }
-                      animate={
-                        isInView && enableMotion
-                          ? {
-                              opacity: 1,
-                              scale: 1,
-                            }
-                          : undefined
-                      }
-                      transition={{
-                        delay:
-                          index * 0.08 +
-                          techIndex * 0.05 +
-                          0.3,
-                        duration: 0.3,
-                      }}
-                      className={`rounded-full border px-3 py-1.5 text-xs transition-all duration-300 ${
-                        item.featured
-                          ? "border-[#565449] bg-[#11120D] text-[#A6A397] hover:border-[#D8CFBC] hover:text-[#D8CFBC]"
-                          : "border-[#302F29] bg-[#11120D] text-[#77746B] hover:border-[#565449] hover:text-[#D8CFBC]"
-                      }`}
-                    >
-                      {technology}
-                    </motion.span>
-                  )
-                )}
-              </div>
+                        animate={{
+                            scale: [1, 2.8, 1],
+                            opacity: [0.5, 0, 0.5],
+                        }}
+                        transition={{
+                            duration: 2.4,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                        }}
+                        className="absolute inset-0 rounded-full bg-[#D8CFBC]"
+                    />
+
+                    <motion.span
+                        animate={{
+                            scale: [1, 1.6, 1],
+                            opacity: [0.8, 0, 0.8],
+                        }}
+                        transition={{
+                            duration: 1.8,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                            delay: 0.2,
+                        }}
+                        className="absolute inset-0 rounded-full border border-[#D8CFBC]"
+                    />
+                </>
             )}
-          </div>
-        </motion.div>
-      </div>
-    </div>
-  );
+        </motion.span>
+    );
 }
 
 /* =========================================================
-   MAIN JOURNEY SECTION
+   JOURNEY CARD
+   3D DEPTH — NO CARD TILT
+========================================================= */
+
+function JourneyCard({
+    stop,
+    fromSide,
+    enableMotion,
+}: {
+    stop: JourneyStop;
+    fromSide: "left" | "right";
+    enableMotion: boolean;
+}) {
+    const cardRef = useRef<HTMLDivElement>(null);
+
+    /* -------------------------------------------------------
+       Cursor position
+    ------------------------------------------------------- */
+
+    const mouseX = useMotionValue(0.5);
+    const mouseY = useMotionValue(0.5);
+
+    const springConfig = {
+        stiffness: 180,
+        damping: 24,
+        mass: 0.5,
+    };
+
+    const smoothX = useSpring(
+        mouseX,
+        springConfig
+    );
+
+    const smoothY = useSpring(
+        mouseY,
+        springConfig
+    );
+
+    /* -------------------------------------------------------
+       Spotlight
+    ------------------------------------------------------- */
+
+    const spotlightX = useTransform(
+        smoothX,
+        [0, 1],
+        ["0%", "100%"]
+    );
+
+    const spotlightY = useTransform(
+        smoothY,
+        [0, 1],
+        ["0%", "100%"]
+    );
+
+    const spotlight = useMotionTemplate`
+    radial-gradient(
+      420px circle at ${spotlightX} ${spotlightY},
+      rgba(216,207,188,0.13),
+      transparent 60%
+    )
+  `;
+
+    /* -------------------------------------------------------
+       Depth movements
+    ------------------------------------------------------- */
+
+    const depthX = useTransform(
+        smoothX,
+        [0, 1],
+        [-6, 6]
+    );
+
+    const depthY = useTransform(
+        smoothY,
+        [0, 1],
+        [-5, 5]
+    );
+
+    const iconX = useTransform(
+        smoothX,
+        [0, 1],
+        [-3, 3]
+    );
+
+    const iconY = useTransform(
+        smoothY,
+        [0, 1],
+        [-5, 5]
+    );
+
+    /* -------------------------------------------------------
+       Mouse movement
+    ------------------------------------------------------- */
+
+    function handleMouseMove(
+        event: React.MouseEvent<HTMLDivElement>
+    ) {
+        if (!enableMotion) return;
+
+        const rect =
+            cardRef.current?.getBoundingClientRect();
+
+        if (!rect) return;
+
+        mouseX.set(
+            (event.clientX - rect.left) /
+            rect.width
+        );
+
+        mouseY.set(
+            (event.clientY - rect.top) /
+            rect.height
+        );
+    }
+
+    function handleMouseLeave() {
+        mouseX.set(0.5);
+        mouseY.set(0.5);
+    }
+
+    const fromX =
+        fromSide === "left" ? -24 : 24;
+
+    return (
+        <motion.div
+            ref={cardRef}
+            initial={
+                enableMotion
+                    ? {
+                        opacity: 0,
+                        x: fromX,
+                        y: 12,
+                    }
+                    : false
+            }
+            whileInView={
+                enableMotion
+                    ? {
+                        opacity: 1,
+                        x: 0,
+                        y: 0,
+                    }
+                    : undefined
+            }
+            viewport={{
+                once: true,
+                amount: 0.25,
+            }}
+            transition={{
+                duration: 0.65,
+                ease: [0.22, 1, 0.36, 1],
+            }}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            className="
+        group
+        relative
+        overflow-hidden
+        rounded-2xl
+        border border-[#302F29]
+        bg-[#151610]
+        p-6
+        transition-all
+        duration-500
+        hover:-translate-y-1
+        hover:border-[#565449]
+        hover:shadow-[0_30px_80px_-45px_rgba(216,207,188,0.45)]
+        sm:p-7
+      "
+            style={{
+                perspective: 1000,
+            }}
+        >
+            {/* =====================================================
+          3D BACKGROUND DEPTH
+      ===================================================== */}
+
+            <motion.div
+                style={{
+                    x: enableMotion ? depthX : 0,
+                    y: enableMotion ? depthY : 0,
+                }}
+                className="
+          pointer-events-none
+          absolute
+          -right-20
+          -top-20
+          h-52
+          w-52
+          rounded-full
+          bg-[#D8CFBC]/[0.035]
+          blur-[70px]
+        "
+            />
+
+            {/* =====================================================
+          HUGE BACKGROUND YEAR
+      ===================================================== */}
+
+            <motion.div
+                style={{
+                    x: enableMotion ? depthX : 0,
+                    y: enableMotion ? depthY : 0,
+                }}
+                className="
+          pointer-events-none
+          absolute
+          -bottom-8
+          -right-3
+          select-none
+          text-[120px]
+          font-bold
+          leading-none
+          tracking-[-0.08em]
+          text-[#D8CFBC]/[0.035]
+          transition-opacity
+          duration-500
+          group-hover:text-[#D8CFBC]/[0.07]
+          sm:text-[150px]
+        "
+            >
+                {stop.year}
+            </motion.div>
+
+            {/* =====================================================
+          INNER 3D BORDER
+      ===================================================== */}
+
+            <div
+                className="
+          pointer-events-none
+          absolute
+          inset-[1px]
+          rounded-[15px]
+          border
+          border-white/[0.025]
+        "
+            />
+
+            {/* =====================================================
+          TOP LIGHT
+      ===================================================== */}
+
+            <motion.div
+                animate={
+                    enableMotion
+                        ? {
+                            x: ["-120%", "180%"],
+                        }
+                        : undefined
+                }
+                transition={{
+                    duration: 5,
+                    repeat: Infinity,
+                    repeatDelay: 4,
+                    ease: "easeInOut",
+                }}
+                className="
+          pointer-events-none
+          absolute
+          left-0
+          top-0
+          h-px
+          w-1/3
+          bg-gradient-to-r
+          from-transparent
+          via-[#D8CFBC]/70
+          to-transparent
+          opacity-0
+          group-hover:opacity-100
+        "
+            />
+
+            {/* =====================================================
+          CURSOR SPOTLIGHT
+      ===================================================== */}
+
+            <motion.div
+                style={{
+                    background: spotlight,
+                }}
+                className="
+          pointer-events-none
+          absolute
+          inset-0
+          z-10
+          opacity-0
+          transition-opacity
+          duration-500
+          group-hover:opacity-100
+        "
+            />
+
+            {/* =====================================================
+          CONTENT
+      ===================================================== */}
+
+            <div className="relative z-20">
+                {/* ---------------------------------------------------
+            YEAR / STATUS
+        --------------------------------------------------- */}
+
+                <div className="flex flex-wrap items-center gap-3">
+                    <motion.span
+                        style={{
+                            x: enableMotion ? depthX : 0,
+                        }}
+                        className="
+              h-1.5
+              w-1.5
+              rounded-full
+              bg-[#D8CFBC]
+              shadow-[0_0_10px_rgba(216,207,188,0.7)]
+            "
+                    />
+
+                    <span className="text-xs uppercase tracking-[0.3em] text-[#D8CFBC]">
+                        {stop.year}
+                    </span>
+
+                    {stop.current && (
+                        <span
+                            className="
+                rounded-full
+                border
+                border-[#565449]
+                bg-[#11120D]/50
+                px-2
+                py-0.5
+                text-[10px]
+                uppercase
+                tracking-widest
+                text-[#A6A397]
+                backdrop-blur-sm
+              "
+                        >
+                            In progress
+                        </span>
+                    )}
+                </div>
+
+                {/* ---------------------------------------------------
+            TITLE — DEPTH LAYER
+        --------------------------------------------------- */}
+
+                <motion.h3
+                    style={{
+                        x: enableMotion ? depthX : 0,
+                        y: enableMotion ? depthY : 0,
+                        translateZ: 25,
+                    }}
+                    className="
+            relative
+            mt-3
+            text-xl
+            font-medium
+            tracking-tight
+            transition-colors
+            duration-300
+            group-hover:text-[#D8CFBC]
+            sm:text-2xl
+          "
+                >
+                    {stop.phase}
+                </motion.h3>
+
+                {/* ---------------------------------------------------
+            DESCRIPTION
+        --------------------------------------------------- */}
+
+                <p
+                    className="
+            relative
+            mt-3
+            max-w-xl
+            text-sm
+            leading-6
+            text-[#A6A397]
+          "
+                >
+                    {stop.description}
+                </p>
+
+                {/* ---------------------------------------------------
+            CATEGORY
+        --------------------------------------------------- */}
+
+                <p className="
+          relative
+          mt-5
+          text-xs
+          uppercase
+          tracking-[0.2em]
+          text-[#6F6D64]
+        ">
+                    {stop.kind === "projects"
+                        ? "Projects"
+                        : "Technologies"}
+                </p>
+
+                {/* ---------------------------------------------------
+            TECHNOLOGY / PROJECT PILLS
+        --------------------------------------------------- */}
+
+                <div className="relative mt-3 flex flex-wrap gap-2">
+                    {stop.items.map((entry, i) => {
+                        const Icon = entry.icon;
+
+                        return (
+                            <motion.span
+                                key={entry.name}
+                                initial={
+                                    enableMotion
+                                        ? {
+                                            opacity: 0,
+                                            scale: 0.9,
+                                            y: 8,
+                                        }
+                                        : false
+                                }
+                                whileInView={
+                                    enableMotion
+                                        ? {
+                                            opacity: 1,
+                                            scale: 1,
+                                            y: 0,
+                                        }
+                                        : undefined
+                                }
+                                viewport={{
+                                    once: true,
+                                }}
+                                transition={{
+                                    duration: 0.4,
+                                    delay: i * 0.07,
+                                }}
+                                whileHover={
+                                    enableMotion
+                                        ? {
+                                            y: -5,
+                                            scale: 1.04,
+                                        }
+                                        : undefined
+                                }
+                                style={{
+                                    x:
+                                        enableMotion
+                                            ? iconX
+                                            : 0,
+                                    y:
+                                        enableMotion
+                                            ? iconY
+                                            : 0,
+                                    "--entry-color":
+                                        entry.color,
+                                } as CSSProperties}
+                                className="
+                  group/pill
+                  flex
+                  items-center
+                  gap-2
+                  rounded-full
+                  border
+                  border-[#302F29]
+                  bg-[#11120D]
+                  px-3
+                  py-1.5
+                  text-xs
+                  text-[#A6A397]
+                  shadow-[0_10px_25px_-20px_rgba(216,207,188,0.5)]
+                  transition-all
+                  duration-300
+                  hover:border-[#565449]
+                  hover:bg-[#191A14]
+                  hover:text-[#FFFBF4]
+                "
+                            >
+                                <Icon
+                                    size={14}
+                                    style={{
+                                        color: entry.color,
+                                    }}
+                                    className="transition-transform duration-300 group-hover/pill:scale-110"
+                                />
+
+                                <span>
+                                    {entry.name}
+                                </span>
+                            </motion.span>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* =====================================================
+          GLASS REFLECTION
+      ===================================================== */}
+
+            <motion.div
+                initial={{
+                    x: "-130%",
+                }}
+                whileHover={{
+                    x: "180%",
+                }}
+                transition={{
+                    duration: 0.8,
+                    ease: "easeOut",
+                }}
+                className="
+          pointer-events-none
+          absolute
+          inset-y-0
+          z-30
+          w-1/4
+          -skew-x-12
+          bg-gradient-to-r
+          from-transparent
+          via-white/[0.07]
+          to-transparent
+          blur-sm
+        "
+            />
+
+            {/* =====================================================
+          CORNER ACCENT
+      ===================================================== */}
+
+            <div
+                className="
+          pointer-events-none
+          absolute
+          bottom-5
+          right-5
+          h-7
+          w-7
+        "
+            >
+                <span
+                    className="
+            absolute
+            right-0
+            top-0
+            h-px
+            w-7
+            bg-[#302F29]
+            transition-all
+            duration-500
+            group-hover:w-10
+            group-hover:bg-[#D8CFBC]
+          "
+                />
+
+                <span
+                    className="
+            absolute
+            right-0
+            top-0
+            h-7
+            w-px
+            bg-[#302F29]
+            transition-all
+            duration-500
+            group-hover:h-10
+            group-hover:bg-[#D8CFBC]
+          "
+                />
+            </div>
+        </motion.div>
+    );
+}
+
+/* =========================================================
+   JOURNEY ITEM
+   SAME ALTERNATING ARRANGEMENT
+========================================================= */
+
+function JourneyItem({
+    stop,
+    index,
+    enableMotion,
+}: {
+    stop: JourneyStop;
+    index: number;
+    enableMotion: boolean;
+}) {
+    const isEven = index % 2 === 0;
+
+    const card = (
+        <JourneyCard
+            stop={stop}
+            fromSide={
+                isEven ? "left" : "right"
+            }
+            enableMotion={enableMotion}
+        />
+    );
+
+    return (
+        <div
+            className="
+        relative
+        pl-12
+        sm:pl-14
+        lg:grid
+        lg:grid-cols-2
+        lg:gap-x-16
+        lg:pl-0
+      "
+        >
+            {/* Timeline node */}
+
+            <div
+                className="
+          absolute
+          left-4
+          top-1.5
+          z-40
+          -translate-x-1/2
+          lg:left-1/2
+        "
+            >
+                <JourneyNode
+                    current={Boolean(stop.current)}
+                    enableMotion={enableMotion}
+                />
+            </div>
+
+            {/* KEEPING EXACT SAME ALTERNATING LAYOUT */}
+
+            {isEven ? (
+                <>
+                    <div className="lg:pr-4">
+                        {card}
+                    </div>
+
+                    <div className="hidden lg:block" />
+                </>
+            ) : (
+                <>
+                    <div className="hidden lg:block" />
+
+                    <div className="lg:pl-4">
+                        {card}
+                    </div>
+                </>
+            )}
+        </div>
+    );
+}
+
+/* =========================================================
+   JOURNEY SECTION
 ========================================================= */
 
 export default function Journey() {
-  const prefersReducedMotion = useReducedMotion();
+    const prefersReducedMotion =
+        useReducedMotion();
 
-  const enableMotion = !prefersReducedMotion;
+    const enableMotion =
+        !prefersReducedMotion;
 
-  const [isFinePointer, setIsFinePointer] =
-    useState(false);
+    const timelineRef =
+        useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia(
-      "(hover: hover) and (pointer: fine)"
-    );
+    const { scrollYProgress } =
+        useScroll({
+            target: timelineRef,
+            offset: [
+                "start 0.85",
+                "end 0.55",
+            ],
+        });
 
-    setIsFinePointer(mediaQuery.matches);
+    const lineProgress =
+        useTransform(
+            scrollYProgress,
+            [0, 1],
+            ["0%", "100%"]
+        );
 
-    const handleChange = (
-      event: MediaQueryListEvent
-    ) => {
-      setIsFinePointer(event.matches);
-    };
-
-    mediaQuery.addEventListener(
-      "change",
-      handleChange
-    );
-
-    return () => {
-      mediaQuery.removeEventListener(
-        "change",
-        handleChange
-      );
-    };
-  }, []);
-
-  return (
-    <section
-      id="journey"
-      className="relative overflow-hidden bg-[#11120D] px-6 py-28 text-[#FFFBF4] sm:py-36"
-    >
-      {/* =====================================================
-          BACKGROUND
+    return (
+        <section
+            id="journey"
+            className="
+        relative
+        overflow-x-hidden
+        bg-[#11120D]
+        px-6
+        py-28
+        text-[#FFFBF4]
+        sm:py-36
+      "
+        >
+            {/* =====================================================
+          AMBIENT BACKGROUND
       ===================================================== */}
 
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-      >
-        {/* Main glow */}
+            <div
+                aria-hidden="true"
+                className="
+          pointer-events-none
+          absolute
+          inset-0
+        "
+            >
+                {/* Left glow */}
 
-        <motion.div
-          animate={
-            enableMotion
-              ? {
-                  x: [0, 25, 0],
-                  y: [0, -15, 0],
-                }
-              : undefined
-          }
-          transition={{
-            duration: 16,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="absolute left-1/2 top-[35%] h-[550px] w-[700px] -translate-x-1/2 rounded-full bg-[#D8CFBC]/[0.02] blur-[150px]"
-        />
+                <motion.div
+                    animate={
+                        enableMotion
+                            ? {
+                                x: [0, 30, 0],
+                                y: [0, -20, 0],
+                            }
+                            : undefined
+                    }
+                    transition={{
+                        duration: 14,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                    }}
+                    className="
+            absolute
+            -left-40
+            top-[20%]
+            h-[500px]
+            w-[500px]
+            rounded-full
+            bg-[#D8CFBC]/[0.025]
+            blur-[150px]
+          "
+                />
 
-        {/* Side glow */}
+                {/* Right glow */}
 
-        <motion.div
-          animate={
-            enableMotion
-              ? {
-                  x: [0, -20, 0],
-                  y: [0, 20, 0],
-                }
-              : undefined
-          }
-          transition={{
-            duration: 14,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="absolute -left-64 bottom-[15%] h-[450px] w-[450px] rounded-full bg-[#D8CFBC]/[0.015] blur-[140px]"
-        />
+                <motion.div
+                    animate={
+                        enableMotion
+                            ? {
+                                x: [0, -25, 0],
+                                y: [0, 25, 0],
+                            }
+                            : undefined
+                    }
+                    transition={{
+                        duration: 16,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                    }}
+                    className="
+            absolute
+            -right-48
+            bottom-[10%]
+            h-[450px]
+            w-[450px]
+            rounded-full
+            bg-[#D8CFBC]/[0.02]
+            blur-[140px]
+          "
+                />
 
-        {/* Grid */}
+                {/* Grid */}
 
-        <div
-          className="absolute inset-0 opacity-[0.02]"
-          style={{
-            backgroundImage: `
+                <div
+                    className="
+            absolute
+            inset-0
+            opacity-[0.025]
+          "
+                    style={{
+                        backgroundImage: `
               linear-gradient(
                 rgba(216,207,188,0.45) 1px,
                 transparent 1px
@@ -400,167 +988,274 @@ export default function Journey() {
                 transparent 1px
               )
             `,
-            backgroundSize: "80px 80px",
-            maskImage:
-              "linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)",
-            WebkitMaskImage:
-              "linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)",
-          }}
-        />
-      </div>
+                        backgroundSize:
+                            "80px 80px",
+                        maskImage:
+                            "linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)",
+                        WebkitMaskImage:
+                            "linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)",
+                    }}
+                />
+            </div>
 
-      {/* =====================================================
+            {/* =====================================================
           CONTENT
       ===================================================== */}
 
-      <div className="relative z-10 mx-auto max-w-5xl">
-        {/* HEADER */}
+            <div
+                className="
+          relative
+          z-10
+          mx-auto
+          max-w-5xl
+        "
+            >
+                {/* ===================================================
+            HEADER
+        =================================================== */}
 
-        <motion.div
-          initial={
-            enableMotion
-              ? {
-                  opacity: 0,
-                  y: 25,
-                }
-              : false
-          }
-          whileInView={
-            enableMotion
-              ? {
-                  opacity: 1,
-                  y: 0,
-                }
-              : undefined
-          }
-          viewport={{
-            once: true,
-            amount: 0.4,
-          }}
-          transition={{
-            duration: 0.7,
-            ease: [0.22, 1, 0.36, 1],
-          }}
-          className="mb-20 max-w-3xl sm:mb-24"
-        >
-          {/* Eyebrow */}
+                <motion.div
+                    initial={
+                        enableMotion
+                            ? {
+                                opacity: 0,
+                                y: 20,
+                            }
+                            : false
+                    }
+                    whileInView={
+                        enableMotion
+                            ? {
+                                opacity: 1,
+                                y: 0,
+                            }
+                            : undefined
+                    }
+                    viewport={{
+                        once: true,
+                        amount: 0.4,
+                    }}
+                    transition={{
+                        duration: 0.6,
+                        ease: "easeOut",
+                    }}
+                    className="mb-20 max-w-2xl"
+                >
+                    <div
+                        className="
+              mb-4
+              flex
+              items-center
+              gap-3
+            "
+                    >
+                        <span
+                            className="
+                h-1.5
+                w-1.5
+                rounded-full
+                bg-[#D8CFBC]
+                shadow-[0_0_8px_rgba(216,207,188,0.6)]
+              "
+                        />
 
-          <div className="mb-5 flex items-center gap-3">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#D8CFBC] shadow-[0_0_8px_rgba(216,207,188,0.5)]" />
+                        <p
+                            className="
+                text-sm
+                uppercase
+                tracking-[0.3em]
+                text-[#D8CFBC]
+              "
+                        >
+                            My Journey
+                        </p>
 
-            <span className="text-xs font-medium uppercase tracking-[0.32em] text-[#D8CFBC] sm:text-sm">
-              My Journey
-            </span>
+                        <span
+                            className="
+                h-px
+                w-12
+                bg-[#302F29]
+              "
+                        />
+                    </div>
 
-            <span className="h-px w-12 bg-[#302F29]" />
-          </div>
+                    <h2
+                        className="
+              max-w-xl
+              text-4xl
+              font-semibold
+              tracking-tight
+              sm:text-5xl
+            "
+                    >
+                        From learning{" "}
+                        <span
+                            className="
+                bg-gradient-to-r
+                from-[#D8CFBC]
+                to-[#FFFBF4]
+                bg-clip-text
+                text-transparent
+              "
+                        >
+                            to building.
+                        </span>
+                    </h2>
 
-          {/* Heading */}
+                    <p
+                        className="
+              mt-5
+              max-w-xl
+              text-base
+              leading-7
+              text-[#A6A397]
+            "
+                    >
+                        A timeline of how I&apos;ve grown
+                        from learning programming
+                        fundamentals to building
+                        real-world applications.
+                    </p>
+                </motion.div>
 
-          <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
-            From learning to{" "}
-            <span className="text-[#D8CFBC]">
-              building.
-            </span>
-          </h2>
-
-          {/* Description */}
-
-          <p className="mt-6 max-w-2xl text-base leading-7 text-[#8E8B82] sm:text-lg">
-            A timeline of how I&apos;ve grown from
-            learning programming fundamentals to
-            building real-world applications.
-          </p>
-        </motion.div>
-
-        {/* ===================================================
+                {/* ===================================================
             TIMELINE
         =================================================== */}
 
-        <div className="relative">
-          {/* Vertical timeline line */}
+                <div
+                    ref={timelineRef}
+                    className="relative"
+                >
+                    {/* Base line */}
 
-          <motion.div
-            initial={
-              enableMotion
-                ? {
-                    scaleY: 0,
-                  }
-                : false
-            }
-            whileInView={
-              enableMotion
-                ? {
-                    scaleY: 1,
-                  }
-                : undefined
-            }
-            viewport={{
-              once: true,
-              amount: 0.1,
-            }}
-            transition={{
-              duration: 1.8,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            style={{
-              transformOrigin: "top",
-            }}
-            className="absolute bottom-0 left-[86px] top-0 w-px bg-gradient-to-b from-[#565449] via-[#302F29] to-transparent sm:left-[130px]"
-          />
+                    <div
+                        className="
+              absolute
+              left-4
+              top-0
+              h-full
+              w-px
+              bg-[#302F29]
+              lg:left-1/2
+            "
+                    />
 
-          {/* Timeline items */}
+                    {/* Progress line */}
 
-          <div className="relative">
-            {journey.map((item, index) => (
-              <JourneyItemCard
-                key={`${item.year}-${item.title}`}
-                item={item}
-                index={index}
-                enableMotion={enableMotion}
-              />
-            ))}
-          </div>
-        </div>
+                    {enableMotion ? (
+                        <motion.div
+                            style={{
+                                height: lineProgress,
+                            }}
+                            className="
+                absolute
+                left-4
+                top-0
+                w-px
+                bg-gradient-to-b
+                from-[#D8CFBC]
+                via-[#D8CFBC]
+                to-[#D8CFBC]/20
+                shadow-[0_0_14px_rgba(216,207,188,0.5)]
+                lg:left-1/2
+              "
+                        />
+                    ) : (
+                        <div
+                            className="
+                absolute
+                left-4
+                top-0
+                h-full
+                w-px
+                bg-[#D8CFBC]/25
+                lg:left-1/2
+              "
+                        />
+                    )}
 
-        {/* ===================================================
-            END STATEMENT
+                    {/* Timeline items */}
+
+                    <div
+                        className="
+              space-y-14
+              lg:space-y-16
+            "
+                    >
+                        {journey.map(
+                            (stop, index) => (
+                                <JourneyItem
+                                    key={`${stop.year}-${stop.phase}`}
+                                    stop={stop}
+                                    index={index}
+                                    enableMotion={
+                                        enableMotion
+                                    }
+                                />
+                            )
+                        )}
+                    </div>
+                </div>
+
+                {/* ===================================================
+            CLOSING
         =================================================== */}
 
-        <motion.div
-          initial={
-            enableMotion
-              ? {
-                  opacity: 0,
-                  y: 15,
-                }
-              : false
-          }
-          whileInView={
-            enableMotion
-              ? {
-                  opacity: 1,
-                  y: 0,
-                }
-              : undefined
-          }
-          viewport={{
-            once: true,
-          }}
-          transition={{
-            duration: 0.7,
-          }}
-          className="mt-4 flex items-center justify-center gap-3 text-xs uppercase tracking-[0.2em] text-[#57554E] sm:text-sm"
-        >
-          <span className="h-px w-8 bg-[#302F29] sm:w-12" />
+                <motion.div
+                    initial={
+                        enableMotion
+                            ? {
+                                opacity: 0,
+                                y: 10,
+                            }
+                            : false
+                    }
+                    whileInView={
+                        enableMotion
+                            ? {
+                                opacity: 1,
+                                y: 0,
+                            }
+                            : undefined
+                    }
+                    viewport={{
+                        once: true,
+                    }}
+                    transition={{
+                        duration: 0.8,
+                        delay: 0.2,
+                    }}
+                    className="
+            mt-20
+            flex
+            items-center
+            justify-center
+            gap-3
+            text-sm
+            text-[#6F6D64]
+          "
+                >
+                    <span
+                        className="
+              h-px
+              w-10
+              bg-[#302F29]
+            "
+                    />
 
-          <span>
-            Still learning. Still building.
-          </span>
+                    <span>
+                        Still learning. Still building.
+                    </span>
 
-          <span className="h-px w-8 bg-[#302F29] sm:w-12" />
-        </motion.div>
-      </div>
-    </section>
-  );
+                    <span
+                        className="
+              h-px
+              w-10
+              bg-[#302F29]
+            "
+                    />
+                </motion.div>
+            </div>
+        </section>
+    );
 }

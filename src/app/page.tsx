@@ -4,6 +4,9 @@ import About from "@/sections/About";
 import Skills from "@/sections/Skills";
 import Projects from "@/sections/Projects";
 import Journey from "@/sections/Journey";
+import Contact from "@/sections/Contact";
+import Footer from "@/sections/Footer";
+
 export default function Home() {
   return (
     <main id="home" className="min-h-screen bg-[#11120D]">
@@ -11,8 +14,11 @@ export default function Home() {
       <Hero />
       <About />
       <Skills />
-      <Projects />
+      <Projects />  
       <Journey />
+      <Contact />
+      <Footer />
+      
     </main>
   );
 }

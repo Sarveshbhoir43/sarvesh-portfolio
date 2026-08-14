@@ -248,10 +248,10 @@ function TechnologyPill({
         whileHover={
           enableTilt
             ? {
-                y: -3,
-                scale: 1.03,
-                boxShadow: "0 10px 26px -14px rgba(216,207,188,0.35)",
-              }
+              y: -3,
+              scale: 1.03,
+              boxShadow: "0 10px 26px -14px rgba(216,207,188,0.35)",
+            }
             : undefined
         }
         style={{
@@ -263,8 +263,10 @@ function TechnologyPill({
       >
         <Icon
           size={17}
-          className="text-[#6F6D64] transition-all duration-300 group-hover/tech:text-[var(--tech-color)]"
-          style={{ "--tech-color": tech.color } as CSSProperties}
+          style={{
+            color: tech.color,
+          }}
+          className="transition-transform duration-300 group-hover/tech:scale-110"
         />
         <span className="text-sm text-[#A6A397] transition-colors duration-300 group-hover/tech:text-[#FFFBF4]">
           {tech.name}
