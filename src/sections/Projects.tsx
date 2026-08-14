@@ -1,22 +1,28 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { CSSProperties } from "react";
 import {
   motion,
   useMotionValue,
+  useMotionTemplate,
   useSpring,
   useTransform,
   useReducedMotion,
+  useInView,
+  animate,
 } from "framer-motion";
+
 import {
   ArrowUpRight,
   ExternalLink,
   Folder,
   Sparkles,
+  Play,
+  Video,
 } from "lucide-react";
 
 import { FaGithub } from "react-icons/fa";
+
 /* =========================================================
    TYPES
 ========================================================= */
@@ -29,6 +35,7 @@ interface Project {
   image?: string;
   github?: string;
   demo?: string;
+  demoType?: "website" | "video" | "app";
   accent: string;
   number: string;
 }
@@ -42,8 +49,10 @@ const projects: Project[] = [
     number: "01",
     title: "AI Interview Screener",
     category: "AI / Web Application",
+
     description:
       "An AI-powered interview screening application designed to streamline candidate evaluation and make the initial screening process more efficient.",
+
     technologies: [
       "AI",
       "Next.js",
@@ -51,52 +60,217 @@ const projects: Project[] = [
       "TypeScript",
       "Tailwind CSS",
     ],
+
     image: "/projects/ai-interview-screener.png",
+
     github:
       "https://github.com/aiinterviewscreener/ai_interview_screener_V2",
-    demo: "#",
+
+    demo: "/projects/AI Interview Screener.mp4",
+
+    demoType: "video",
+
     accent: "#D8CFBC",
   },
 
   {
     number: "02",
     title: "Gym Progress",
-  category: "Mobile Application",
-  description:
-    "A fitness progress tracking app for recording workouts, exercises, weights, reps and long-term strength progression.",
-  technologies: [
-    "React Native",
-    "Expo",
-    "Expo Router",
-    "EAS",
-  ],
-  image: "/projects/gym-progress.png",
-  github: "https://github.com/Sarveshbhoir43/gym-progress",
-  demo: "https://expo.dev/accounts/sarveshbhoir0530/projects/gym-progress/builds/52ea9f88-911a-4012-af6c-8ad67cf6422c",
-  accent: "#D8CFBC",
+    category: "Mobile Application",
+
+    description:
+      "A fitness progress tracking app for recording workouts, exercises, weights, reps and long-term strength progression.",
+
+    technologies: [
+      "React Native",
+      "Expo",
+      "Expo Router",
+      "EAS",
+    ],
+
+    image: "/projects/gym-progress.png",
+
+    github:
+      "https://github.com/Sarveshbhoir43/gym-progress",
+
+    demo:
+      "https://expo.dev/accounts/sarveshbhoir0530/projects/gym-progress/builds/52ea9f88-911a-4012-af6c-8ad67cf6422c",
+
+    demoType: "app",
+
+    accent: "#D8CFBC",
   },
 
   {
     number: "03",
     title: "Royal Stay Hotel",
     category: "Web Development",
+
     description:
       "A modern hotel website focused on presenting rooms, services and hotel information through a polished responsive experience.",
+
     technologies: [
       "Next.js",
       "React",
       "Tailwind CSS",
       "Vercel",
     ],
+
     image: "/projects/royal-stay.png",
-    github: "https://github.com/Sarveshbhoir43/royal-stay-hotel",
-    demo: "https://royal-stay-hotel-tau.vercel.app",
+
+    github:
+      "https://github.com/Sarveshbhoir43/royal-stay-hotel",
+
+    demo:
+      "https://royal-stay-hotel-tau.vercel.app",
+
+    demoType: "website",
+
     accent: "#D8CFBC",
   },
 ];
 
 /* =========================================================
-   PROJECT IMAGE
+   HELPERS
+========================================================= */
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+/* =========================================================
+   MAGNETIC LINK
+========================================================= */
+
+function MagneticLink({
+  href,
+  target,
+  rel,
+  onClick,
+  enableMotion,
+  className,
+  children,
+}: {
+  href: string;
+  target?: string;
+  rel?: string;
+  onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+  enableMotion: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLAnchorElement>(null);
+
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const springConfig = {
+    stiffness: 220,
+    damping: 16,
+    mass: 0.4,
+  };
+
+  const springX = useSpring(x, springConfig);
+  const springY = useSpring(y, springConfig);
+
+  function handleMouseMove(
+    event: React.MouseEvent<HTMLAnchorElement>
+  ) {
+    if (!enableMotion) return;
+
+    const rect = ref.current?.getBoundingClientRect();
+
+    if (!rect) return;
+
+    const relX =
+      event.clientX - (rect.left + rect.width / 2);
+
+    const relY =
+      event.clientY - (rect.top + rect.height / 2);
+
+    x.set(clamp(relX * 0.18, -8, 8));
+    y.set(clamp(relY * 0.28, -6, 6));
+  }
+
+  function handleMouseLeave() {
+    x.set(0);
+    y.set(0);
+  }
+
+  return (
+    <motion.a
+      ref={ref}
+      href={href}
+      target={target}
+      rel={rel}
+      onClick={onClick}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        x: springX,
+        y: springY,
+      }}
+      className={className}
+    >
+      {children}
+    </motion.a>
+  );
+}
+
+/* =========================================================
+   PROJECT COUNT
+========================================================= */
+
+function ProjectCount({
+  value,
+  enableMotion,
+}: {
+  value: number;
+  enableMotion: boolean;
+}) {
+  const numberRef = useRef<HTMLSpanElement>(null);
+
+  const isInView = useInView(numberRef, {
+    once: true,
+    amount: 0.8,
+  });
+
+  useEffect(() => {
+    if (!isInView || !numberRef.current) return;
+
+    const format = (n: number) =>
+      n.toString().padStart(2, "0");
+
+    if (!enableMotion) {
+      numberRef.current.textContent = format(value);
+      return;
+    }
+
+    const controls = animate(0, value, {
+      duration: 0.7,
+      ease: "easeOut",
+
+      onUpdate: (v) => {
+        if (numberRef.current) {
+          numberRef.current.textContent = format(
+            Math.round(v)
+          );
+        }
+      },
+    });
+
+    return () => controls.stop();
+  }, [isInView, value, enableMotion]);
+
+  return <span ref={numberRef}>00</span>;
+}
+
+/* =========================================================
+   PROJECT IMAGE / VIDEO PREVIEW
+
+   IMPORTANT:
+   Mobile project images use object-contain so the
+   complete vertical screenshot stays visible.
 ========================================================= */
 
 function ProjectImage({
@@ -117,18 +291,35 @@ function ProjectImage({
     mass: 0.5,
   };
 
-  const imageXRaw = useTransform(mouseX, [0, 1], [-18, 18]);
-  const imageYRaw = useTransform(mouseY, [0, 1], [-12, 12]);
+  const imageXRaw = useTransform(
+    mouseX,
+    [0, 1],
+    [-10, 10]
+  );
 
-  const imageX = useSpring(imageXRaw, springConfig);
-  const imageY = useSpring(imageYRaw, springConfig);
+  const imageYRaw = useTransform(
+    mouseY,
+    [0, 1],
+    [-8, 8]
+  );
+
+  const imageX = useSpring(
+    imageXRaw,
+    springConfig
+  );
+
+  const imageY = useSpring(
+    imageYRaw,
+    springConfig
+  );
 
   function handleMouseMove(
     event: React.MouseEvent<HTMLDivElement>
   ) {
     if (!enableTilt) return;
 
-    const rect = imageRef.current?.getBoundingClientRect();
+    const rect =
+      imageRef.current?.getBoundingClientRect();
 
     if (!rect) return;
 
@@ -146,6 +337,18 @@ function ProjectImage({
     mouseY.set(0.5);
   }
 
+  /*
+   * Mobile applications normally have portrait screenshots.
+   *
+   * object-contain = shows the complete image.
+   * object-cover   = crops portrait images.
+   *
+   * Therefore Gym Progress gets object-contain.
+   */
+
+  const isMobileProject =
+    project.demoType === "app";
+
   return (
     <div
       ref={imageRef}
@@ -153,7 +356,9 @@ function ProjectImage({
       onMouseLeave={handleMouseLeave}
       className="relative h-[270px] overflow-hidden border-b border-[#302F29] bg-[#10110C] sm:h-[310px]"
     >
-      {/* Background grid */}
+      {/* =====================================================
+          BACKGROUND GRID
+      ===================================================== */}
 
       <div
         className="pointer-events-none absolute inset-0 z-10 opacity-[0.05]"
@@ -173,19 +378,75 @@ function ProjectImage({
         }}
       />
 
-      {/* Project image */}
+      {/* =====================================================
+          IMAGE
+      ===================================================== */}
 
       {project.image ? (
-        <motion.img
-          src={project.image}
-          alt={`${project.title} preview`}
-          style={{
-            x: enableTilt ? imageX : 0,
-            y: enableTilt ? imageY : 0,
-            scale: 1.08,
-          }}
-          className="absolute inset-0 h-full w-full object-cover opacity-80 transition-all duration-700 group-hover:scale-[1.13] group-hover:opacity-100"
-        />
+        <>
+          {/* Soft background behind portrait screenshot */}
+
+          {isMobileProject && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="h-[85%] w-[45%] rounded-[40px] bg-[#D8CFBC]/[0.035] blur-[45px]" />
+            </div>
+          )}
+
+          <motion.img
+            src={project.image}
+            alt={`${project.title} preview`}
+            style={{
+              x: enableTilt ? imageX : 0,
+              y: enableTilt ? imageY : 0,
+
+              /*
+               * Desktop websites get a slight zoom.
+               * Mobile screenshot stays almost normal size
+               * because we don't want it cropped.
+               */
+              scale: isMobileProject ? 1.02 : 1.08,
+            }}
+            className={
+              isMobileProject
+                ? `
+                  absolute inset-0
+                  h-full w-full
+                  object-contain
+                  p-5
+                  opacity-90
+                  transition-all duration-700
+                  group-hover:scale-[1.04]
+                  group-hover:opacity-100
+                `
+                : `
+                  absolute inset-0
+                  h-full w-full
+                  object-cover
+                  opacity-80
+                  transition-all duration-700
+                  group-hover:scale-[1.13]
+                  group-hover:rotate-[1deg]
+                  group-hover:opacity-100
+                `
+            }
+          />
+
+          {/* Portrait screenshot frame */}
+
+          {isMobileProject && (
+            <div
+              className="
+                pointer-events-none
+                absolute inset-y-4 left-1/2
+                w-[calc(45%)]
+                -translate-x-1/2
+                rounded-[28px]
+                border border-[#D8CFBC]/10
+                opacity-70
+              "
+            />
+          )}
+        </>
       ) : (
         <div className="absolute inset-0 flex items-center justify-center">
           <motion.div
@@ -198,9 +459,26 @@ function ProjectImage({
               stiffness: 180,
               damping: 18,
             }}
-            className="relative flex h-28 w-28 items-center justify-center rounded-[28px] border border-[#565449] bg-[#181914] shadow-[0_25px_70px_-30px_rgba(216,207,188,0.45)]"
+            className="
+              relative
+              flex h-28 w-28
+              items-center justify-center
+              rounded-[28px]
+              border border-[#565449]
+              bg-[#181914]
+              shadow-[0_25px_70px_-30px_rgba(216,207,188,0.45)]
+            "
           >
-            <div className="absolute inset-[-14px] rounded-[34px] border border-[#302F29] transition-all duration-500 group-hover:inset-[-20px] group-hover:border-[#565449]" />
+            <div
+              className="
+                absolute inset-[-14px]
+                rounded-[34px]
+                border border-[#302F29]
+                transition-all duration-500
+                group-hover:inset-[-20px]
+                group-hover:border-[#565449]
+              "
+            />
 
             <Folder
               size={46}
@@ -216,19 +494,39 @@ function ProjectImage({
         </div>
       )}
 
-      {/* Image overlay */}
+      {/* =====================================================
+          VIDEO INDICATOR
+      ===================================================== */}
+
+      {project.demoType === "video" && (
+        <div className="absolute right-6 top-6 z-20">
+          <div className="flex items-center gap-2 rounded-full border border-[#565449]/70 bg-[#11120D]/80 px-3 py-1.5 text-xs text-[#D8CFBC] backdrop-blur-md">
+            <Video size={13} />
+
+            <span>Demo Video</span>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================
+          IMAGE OVERLAY
+      ===================================================== */}
 
       <div className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t from-[#10110C] via-transparent to-transparent opacity-80" />
 
       <div className="pointer-events-none absolute inset-0 z-[2] bg-[#11120D]/10 transition-colors duration-500 group-hover:bg-transparent" />
 
-      {/* Project number */}
+      {/* =====================================================
+          PROJECT NUMBER
+      ===================================================== */}
 
       <div className="absolute left-7 top-6 z-20 text-xs font-medium tracking-[0.25em] text-[#D8CFBC]/70">
         PROJECT {project.number}
       </div>
 
-      {/* Category */}
+      {/* =====================================================
+          CATEGORY
+      ===================================================== */}
 
       <div className="absolute bottom-6 left-7 z-20">
         <span className="rounded-full border border-[#565449]/70 bg-[#11120D]/80 px-3 py-1.5 text-xs text-[#A6A397] backdrop-blur-md">
@@ -236,11 +534,14 @@ function ProjectImage({
         </span>
       </div>
 
-      {/* Corner decoration */}
+      {/* =====================================================
+          CORNER DECORATION
+      ===================================================== */}
 
       <div className="absolute bottom-6 right-7 z-20 h-8 w-8">
-        <span className="absolute right-0 top-0 h-px w-8 bg-[#565449]" />
-        <span className="absolute right-0 top-0 h-8 w-px bg-[#565449]" />
+        <span className="absolute right-0 top-0 h-px w-8 bg-[#565449] transition-all duration-500 group-hover:w-11 group-hover:bg-[#D8CFBC]" />
+
+        <span className="absolute right-0 top-0 h-8 w-px bg-[#565449] transition-all duration-500 group-hover:h-11 group-hover:bg-[#D8CFBC]" />
       </div>
     </div>
   );
@@ -294,6 +595,27 @@ function ProjectCard({
     springConfig
   );
 
+  const spotlightX = useTransform(
+    mouseX,
+    [0, 1],
+    ["0%", "100%"]
+  );
+
+  const spotlightY = useTransform(
+    mouseY,
+    [0, 1],
+    ["0%", "100%"]
+  );
+
+  const spotlightBackground =
+    useMotionTemplate`
+      radial-gradient(
+        480px circle at ${spotlightX} ${spotlightY},
+        rgba(216,207,188,0.12),
+        transparent 45%
+      )
+    `;
+
   function handleMouseMove(
     event: React.MouseEvent<HTMLDivElement>
   ) {
@@ -316,6 +638,16 @@ function ProjectCard({
   function handleMouseLeave() {
     mouseX.set(0.5);
     mouseY.set(0.5);
+  }
+
+  function openDemo(
+    event: React.MouseEvent<HTMLAnchorElement>
+  ) {
+    if (!project.demo) return;
+
+    if (project.demoType === "video") {
+      return;
+    }
   }
 
   return (
@@ -355,30 +687,74 @@ function ProjectCard({
           rotateX: enableTilt ? rotateX : 0,
           rotateY: enableTilt ? rotateY : 0,
           transformPerspective: 1200,
+          transformStyle: "preserve-3d",
         }}
         whileHover={
           enableMotion
             ? {
                 y: -7,
+                scale: 1.01,
               }
             : undefined
         }
-        className="relative h-full overflow-hidden rounded-3xl border border-[#302F29] bg-[#151610] transition-all duration-500 hover:border-[#565449] hover:shadow-[0_30px_80px_-45px_rgba(216,207,188,0.35)]"
+        className="
+          relative h-full
+          overflow-hidden
+          rounded-3xl
+          border border-[#302F29]
+          bg-[#151610]
+          transition-all duration-500
+          hover:border-[#565449]
+          hover:shadow-[0_30px_80px_-45px_rgba(216,207,188,0.35)]
+        "
       >
         {/* Ambient glow */}
 
         <div
-          className="pointer-events-none absolute -right-32 -top-32 z-0 h-72 w-72 rounded-full opacity-0 blur-[100px] transition-opacity duration-700 group-hover:opacity-100"
+          className="
+            pointer-events-none
+            absolute -right-32 -top-32
+            z-0 h-72 w-72
+            rounded-full
+            opacity-0
+            blur-[100px]
+            transition-opacity duration-700
+            group-hover:opacity-100
+          "
           style={{
             backgroundColor: `${project.accent}12`,
           }}
         />
 
+        {/* Ghost numeral */}
+
+        <div
+          aria-hidden="true"
+          className="
+            pointer-events-none
+            absolute -bottom-4 -right-2
+            z-0 select-none
+            text-[140px]
+            font-bold
+            leading-none
+            text-[#D8CFBC]/[0.045]
+            sm:-bottom-6
+            sm:text-[180px]
+          "
+        >
+          {project.number}
+        </div>
+
         {/* Top line */}
 
         <div className="absolute left-0 right-0 top-0 z-30 h-px bg-[#302F29]">
           <div
-            className="mx-auto h-full w-0 bg-[#D8CFBC] transition-all duration-700 group-hover:w-1/2"
+            className="
+              mx-auto h-full w-0
+              bg-[#D8CFBC]
+              transition-all duration-700
+              group-hover:w-1/2
+            "
             style={{
               boxShadow:
                 "0 0 15px rgba(216,207,188,0.5)",
@@ -395,10 +771,20 @@ function ProjectCard({
 
         {/* Content */}
 
-        <div className="relative z-10 p-7 sm:p-8">
+        <div
+          style={{
+            transformStyle: "preserve-3d",
+          }}
+          className="relative z-10 p-7 sm:p-8"
+        >
           {/* Title */}
 
-          <div className="flex items-start justify-between gap-4">
+          <div
+            style={{
+              transform: "translateZ(20px)",
+            }}
+            className="flex items-start justify-between gap-4"
+          >
             <div>
               <p className="mb-2 text-xs uppercase tracking-[0.22em] text-[#5F5D56]">
                 {project.number}
@@ -412,8 +798,23 @@ function ProjectCard({
             <motion.div
               whileHover={{
                 rotate: 45,
+                scale: 1.08,
               }}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#302F29] transition-all duration-500 group-hover:border-[#565449] group-hover:bg-[#D8CFBC]"
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 18,
+              }}
+              className="
+                flex h-10 w-10 shrink-0
+                items-center justify-center
+                rounded-full
+                border border-[#302F29]
+                transition-all duration-500
+                group-hover:border-[#565449]
+                group-hover:bg-[#D8CFBC]
+                group-hover:shadow-[0_0_20px_-4px_rgba(216,207,188,0.5)]
+              "
             >
               <ArrowUpRight
                 size={18}
@@ -424,13 +825,23 @@ function ProjectCard({
 
           {/* Description */}
 
-          <p className="mt-5 max-w-xl text-sm leading-7 text-[#77746B] sm:text-[15px]">
+          <p
+            style={{
+              transform: "translateZ(8px)",
+            }}
+            className="mt-5 max-w-xl text-sm leading-7 text-[#77746B] sm:text-[15px]"
+          >
             {project.description}
           </p>
 
           {/* Technologies */}
 
-          <div className="mt-6 flex flex-wrap gap-2">
+          <div
+            style={{
+              transform: "translateZ(6px)",
+            }}
+            className="mt-6 flex flex-wrap gap-2"
+          >
             {project.technologies.map(
               (technology, techIndex) => (
                 <motion.span
@@ -451,6 +862,14 @@ function ProjectCard({
                         }
                       : undefined
                   }
+                  whileHover={
+                    enableMotion
+                      ? {
+                          y: -2,
+                          scale: 1.05,
+                        }
+                      : undefined
+                  }
                   viewport={{
                     once: true,
                   }}
@@ -460,7 +879,17 @@ function ProjectCard({
                       techIndex * 0.04,
                     duration: 0.3,
                   }}
-                  className="rounded-full border border-[#302F29] bg-[#11120D] px-3 py-1.5 text-xs text-[#77746B] transition-all duration-300 hover:border-[#565449] hover:text-[#D8CFBC]"
+                  className="
+                    rounded-full
+                    border border-[#302F29]
+                    bg-[#11120D]
+                    px-3 py-1.5
+                    text-xs
+                    text-[#77746B]
+                    transition-all duration-300
+                    hover:border-[#565449]
+                    hover:text-[#D8CFBC]
+                  "
                 >
                   {technology}
                 </motion.span>
@@ -470,15 +899,40 @@ function ProjectCard({
 
           {/* Actions */}
 
-          <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-[#25251F] pt-6">
+          <div
+            style={{
+              transform: "translateZ(2px)",
+            }}
+            className="
+              mt-8 flex flex-wrap
+              items-center gap-3
+              border-t border-[#25251F]
+              pt-6
+            "
+          >
             {/* GitHub */}
 
             {project.github ? (
-              <a
+              <MagneticLink
                 href={project.github}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group/button inline-flex items-center gap-2 rounded-full border border-[#3A3932] bg-[#11120D] px-4 py-2.5 text-sm text-[#A6A397] transition-all duration-300 hover:border-[#6A675D] hover:bg-[#1A1B15] hover:text-[#FFFBF4]"
+                enableMotion={enableMotion}
+                className="
+                  group/button
+                  inline-flex
+                  items-center gap-2
+                  rounded-full
+                  border border-[#3A3932]
+                  bg-[#11120D]
+                  px-4 py-2.5
+                  text-sm
+                  text-[#A6A397]
+                  transition-all duration-300
+                  hover:border-[#6A675D]
+                  hover:bg-[#1A1B15]
+                  hover:text-[#FFFBF4]
+                "
               >
                 <FaGithub
                   size={16}
@@ -491,31 +945,75 @@ function ProjectCard({
                   size={14}
                   className="opacity-50 transition-all duration-300 group-hover/button:translate-x-0.5 group-hover/button:-translate-y-0.5 group-hover/button:opacity-100"
                 />
-              </a>
+              </MagneticLink>
             ) : (
               <span className="inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-[#292921] bg-[#11120D] px-4 py-2.5 text-sm text-[#4F4D47]">
                 <FaGithub size={16} />
+
                 GitHub
               </span>
             )}
 
-            {/* Live Demo */}
+            {/* Demo */}
 
-            {project.demo &&
-            project.demo !== "#" ? (
-              <a
+            {project.demo ? (
+              <MagneticLink
                 href={project.demo}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group/demo inline-flex items-center gap-2 rounded-full bg-[#D8CFBC] px-4 py-2.5 text-sm font-medium text-[#11120D] transition-all duration-300 hover:bg-[#FFFBF4] hover:shadow-[0_10px_30px_-15px_rgba(216,207,188,0.7)]"
+                onClick={openDemo}
+                enableMotion={enableMotion}
+                className="
+                  group/demo
+                  relative
+                  inline-flex
+                  items-center gap-2
+                  overflow-hidden
+                  rounded-full
+                  bg-[#D8CFBC]
+                  px-4 py-2.5
+                  text-sm font-medium
+                  text-[#11120D]
+                  transition-all duration-300
+                  hover:bg-[#FFFBF4]
+                  hover:shadow-[0_10px_30px_-15px_rgba(216,207,188,0.7)]
+                "
               >
-                <span>Live Demo</span>
-
-                <ExternalLink
-                  size={15}
-                  className="transition-transform duration-300 group-hover/demo:translate-x-0.5 group-hover/demo:-translate-y-0.5"
+                <span
+                  className="
+                    pointer-events-none
+                    absolute inset-y-0 -left-1/2
+                    z-0 w-1/3
+                    -skew-x-12
+                    bg-white/50
+                    blur-sm
+                    transition-transform duration-700
+                    ease-out
+                    group-hover/demo:translate-x-[420%]
+                  "
                 />
-              </a>
+
+                {project.demoType === "video" ? (
+                  <Play
+                    size={15}
+                    fill="currentColor"
+                    className="relative z-10 transition-transform duration-300 group-hover/demo:scale-110"
+                  />
+                ) : (
+                  <ExternalLink
+                    size={15}
+                    className="relative z-10 transition-transform duration-300 group-hover/demo:translate-x-0.5 group-hover/demo:-translate-y-0.5"
+                  />
+                )}
+
+                <span className="relative z-10">
+                  {project.demoType === "video"
+                    ? "Watch Demo"
+                    : project.demoType === "app"
+                    ? "Get App"
+                    : "Live Demo"}
+                </span>
+              </MagneticLink>
             ) : (
               <span className="inline-flex cursor-not-allowed items-center gap-2 rounded-full border border-[#302F29] bg-[#181914] px-4 py-2.5 text-sm text-[#5F5D56]">
                 <span>Live Demo</span>
@@ -525,6 +1023,23 @@ function ProjectCard({
             )}
           </div>
         </div>
+
+        {/* Cursor spotlight */}
+
+        <motion.div
+          style={{
+            background: spotlightBackground,
+          }}
+          className="
+            pointer-events-none
+            absolute inset-0
+            z-20
+            mix-blend-screen
+            opacity-0
+            transition-opacity duration-500
+            group-hover:opacity-100
+          "
+        />
       </motion.div>
     </motion.article>
   );
@@ -538,7 +1053,8 @@ export default function Projects() {
   const prefersReducedMotion =
     useReducedMotion();
 
-  const enableMotion = !prefersReducedMotion;
+  const enableMotion =
+    !prefersReducedMotion;
 
   const [isFinePointer, setIsFinePointer] =
     useState(false);
@@ -570,12 +1086,21 @@ export default function Projects() {
   }, []);
 
   const enableTilt =
-    isFinePointer && !prefersReducedMotion;
+    isFinePointer &&
+    !prefersReducedMotion;
 
   return (
     <section
       id="projects"
-      className="relative overflow-hidden bg-[#11120D] px-6 py-28 text-[#FFFBF4] sm:py-36"
+      className="
+        relative
+        overflow-hidden
+        bg-[#11120D]
+        px-6
+        py-28
+        text-[#FFFBF4]
+        sm:py-36
+      "
     >
       {/* ===================================================
           BACKGROUND
@@ -585,13 +1110,58 @@ export default function Projects() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
       >
-        {/* Main glow */}
+        <motion.div
+          animate={
+            enableMotion
+              ? {
+                  x: [0, 24, 0],
+                  y: [0, -16, 0],
+                }
+              : undefined
+          }
+          transition={{
+            duration: 16,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="
+            absolute
+            left-1/2
+            top-[25%]
+            h-[500px]
+            w-[700px]
+            -translate-x-1/2
+            rounded-full
+            bg-[#D8CFBC]/[0.025]
+            blur-[150px]
+          "
+        />
 
-        <div className="absolute left-1/2 top-[25%] h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-[#D8CFBC]/[0.025] blur-[150px]" />
-
-        {/* Side glow */}
-
-        <div className="absolute -right-64 bottom-[10%] h-[500px] w-[500px] rounded-full bg-[#D8CFBC]/[0.02] blur-[140px]" />
+        <motion.div
+          animate={
+            enableMotion
+              ? {
+                  x: [0, -20, 0],
+                  y: [0, 18, 0],
+                }
+              : undefined
+          }
+          transition={{
+            duration: 13,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="
+            absolute
+            -right-64
+            bottom-[10%]
+            h-[500px]
+            w-[500px]
+            rounded-full
+            bg-[#D8CFBC]/[0.02]
+            blur-[140px]
+          "
+        />
 
         {/* Grid */}
 
@@ -676,9 +1246,9 @@ export default function Projects() {
           {/* Description */}
 
           <p className="mt-6 max-w-2xl text-base leading-7 text-[#8E8B82] sm:text-lg">
-            A selection of projects where I turn ideas
-            into functional, interactive and polished
-            digital experiences.
+            A selection of projects where I turn
+            ideas into functional, interactive and
+            polished digital experiences.
           </p>
 
           {/* Project count */}
@@ -686,16 +1256,20 @@ export default function Projects() {
           <div className="mt-8 flex items-center gap-3 text-sm text-[#5F5D56]">
             <span className="h-px w-8 bg-[#302F29]" />
 
-            <span>
-              {projects.length
-                .toString()
-                .padStart(2, "0")}{" "}
-              projects
+            <span className="inline-flex items-center gap-1">
+              <ProjectCount
+                value={projects.length}
+                enableMotion={enableMotion}
+              />
+
+              <span>projects</span>
             </span>
           </div>
         </motion.div>
 
-        {/* Project grid */}
+        {/* =================================================
+            PROJECT GRID
+        ================================================= */}
 
         <div className="mt-16 grid gap-6 md:grid-cols-2 lg:mt-20">
           {projects.map((project, index) => (
@@ -709,7 +1283,9 @@ export default function Projects() {
           ))}
         </div>
 
-        {/* Bottom statement */}
+        {/* =================================================
+            BOTTOM STATEMENT
+        ================================================= */}
 
         <motion.div
           initial={
@@ -733,11 +1309,24 @@ export default function Projects() {
             duration: 0.8,
             delay: 0.25,
           }}
-          className="mt-16 flex items-center justify-center gap-3 text-xs uppercase tracking-[0.2em] text-[#57554E] sm:text-sm"
+          className="
+            mt-16
+            flex
+            items-center
+            justify-center
+            gap-3
+            text-xs
+            uppercase
+            tracking-[0.2em]
+            text-[#57554E]
+            sm:text-sm
+          "
         >
           <span className="h-px w-8 bg-[#302F29] sm:w-12" />
 
-          <span>More ideas. More builds.</span>
+          <span>
+            More ideas. More builds.
+          </span>
 
           <span className="h-px w-8 bg-[#302F29] sm:w-12" />
         </motion.div>
