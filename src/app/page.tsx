@@ -3,6 +3,7 @@ import Hero from "@/sections/Hero";
 import About from "@/sections/About";
 import Skills from "@/sections/Skills";
 import Projects from "@/sections/Projects";
+import Journey from "@/sections/Journey";
 export default function Home() {
   return (
     <main id="home" className="min-h-screen bg-[#11120D]">
@@ -11,7 +12,7 @@ export default function Home() {
       <About />
       <Skills />
       <Projects />
-
+      <Journey />
     </main>
   );
 }
