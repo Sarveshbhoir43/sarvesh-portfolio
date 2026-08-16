@@ -66,7 +66,7 @@ const projects: Project[] = [
     github:
       "https://github.com/aiinterviewscreener/ai_interview_screener_V2",
 
-    demo: "/projects/AI Interview Screener.mp4",
+    demo: "https://res.cloudinary.com/rcfvpmze/video/upload/v1786867309/AI_Interview_Screener-compressed.mp4",
 
     demoType: "video",
 
@@ -1099,7 +1099,7 @@ export default function Projects() {
         px-6
         py-28
         text-[#FFFBF4]
-        sm:py-36
+        sm:py-20
       "
     >
       {/* ===================================================
@@ -1161,30 +1161,6 @@ export default function Projects() {
             bg-[#D8CFBC]/[0.02]
             blur-[140px]
           "
-        />
-
-        {/* Grid */}
-
-        <div
-          className="absolute inset-0 opacity-[0.025]"
-          style={{
-            backgroundImage: `
-              linear-gradient(
-                rgba(216,207,188,0.45) 1px,
-                transparent 1px
-              ),
-              linear-gradient(
-                90deg,
-                rgba(216,207,188,0.45) 1px,
-                transparent 1px
-              )
-            `,
-            backgroundSize: "80px 80px",
-            maskImage:
-              "linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)",
-            WebkitMaskImage:
-              "linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)",
-          }}
         />
       </div>
 
