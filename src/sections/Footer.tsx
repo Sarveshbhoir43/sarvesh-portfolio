@@ -63,20 +63,20 @@ export default function Footer() {
       ===================================================== */}
 
       <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute
-          left-1/2
-          top-0
-          h-[350px]
-          w-[600px]
-          -translate-x-1/2
-          rounded-full
-          bg-[#D8CFBC]/[0.025]
-          blur-[130px]
-        "
-      />
+  aria-hidden="true"
+  className="
+    pointer-events-none
+    absolute
+    -right-60
+    bottom-25
+    h-[350px]
+    w-[600px]
+    translate-x-1/4
+    rounded-full
+    bg-[#D8CFBC]/[0.025]
+    blur-[130px]
+  "
+/>
 
       {/* =====================================================
           MAIN CONTAINER
