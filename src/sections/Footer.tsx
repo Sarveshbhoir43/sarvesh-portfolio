@@ -256,7 +256,7 @@ export default function Footer() {
               {/* LinkedIn */}
 
               <a
-                href="https://www.linkedin.com/in/sarvesh-bhoir/"
+                href="https://www.linkedin.com/in/sarvesh-bhoir-63790a3ba/"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="LinkedIn"
