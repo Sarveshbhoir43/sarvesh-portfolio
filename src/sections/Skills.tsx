@@ -383,7 +383,7 @@ export default function Skills() {
   return (
     <section
       id="skills"
-      className="relative isolate overflow-hidden bg-[#11120D] px-6 py-28 text-[#FFFBF4]"
+      className="relative isolate overflow-hidden bg-[#11120D] px-6 py-16 text-[#FFFBF4]"
     >
       <SkillsAmbientStyles />
 

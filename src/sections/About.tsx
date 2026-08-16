@@ -305,7 +305,7 @@ export default function About() {
   return (
     <section
       id="about"
-      className="relative overflow-x-hidden bg-[#11120D] px-6 py-28 text-[#FFFBF4]"
+      className="relative overflow-x-hidden bg-[#11120D] px-6 py-14 text-[#FFFBF4]"
     >
       {showOrb && <AboutBackgroundOrb />}
 
@@ -365,7 +365,7 @@ export default function About() {
             {/* Small stats */}
             <div className="mt-10 flex divide-x divide-[#302F29]">
               <div className="pr-10">
-                <StatItem value={10} suffix="+" label="Projects" index={0} enableMotion={enableMotion} />
+                <StatItem value={7} suffix="+" label="Projects" index={0} enableMotion={enableMotion} />
               </div>
               <div className="px-10">
                 <StatItem value={8} suffix="+" label="Technologies" index={1} enableMotion={enableMotion} />

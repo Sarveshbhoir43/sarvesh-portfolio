@@ -433,18 +433,18 @@ export default function Contact() {
   const enableMotion = !prefersReducedMotion;
 
   return (
-    <section
-      id="contact"
-      className="
-        relative
-        overflow-hidden
-        bg-[#11120D]
-        px-6
-        py-28
-        text-[#FFFBF4]
-        sm:py-36
-      "
-    >
+   <section
+  id="contact"
+  className="
+    relative
+    overflow-hidden
+    bg-[#11120D]
+    px-6
+    text-[#FFFBF4]
+    sm:pt-20
+    sm:pb-20
+  "
+>
       <style>{`
         @keyframes float-y {
           0%, 100% { transform: translateY(0px); }
@@ -751,7 +751,7 @@ export default function Contact() {
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.2 }}
           className="
-            mt-20
+            mt-8
             flex
             items-center
             justify-center
