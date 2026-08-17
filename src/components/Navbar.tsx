@@ -48,7 +48,7 @@ export default function Navbar() {
 
         {/* Resume Button */}
         <Link
-          href="/resume.pdf"
+          href="/Sarvesh_Bhoir_Resume.pdf"
           target="_blank"
           className="hidden items-center gap-2 rounded-lg border border-[#302F29] bg-[#181914] px-4 py-2.5 text-sm text-[#FFFBF4] transition-all duration-300 hover:border-[#D8CFBC] hover:bg-[#D8CFBC] hover:text-[#11120D] sm:flex"
         >
