@@ -57,19 +57,19 @@ function HangingProfile({
         initial={
           enableMotion
             ? {
-                opacity: 0,
-                y: -20,
-                rotate: -5,
-              }
+              opacity: 0,
+              y: -20,
+              rotate: -5,
+            }
             : false
         }
         animate={
           enableMotion
             ? {
-                opacity: 1,
-                y: 0,
-                rotate: -2,
-              }
+              opacity: 1,
+              y: 0,
+              rotate: -2,
+            }
             : undefined
         }
         transition={{
@@ -80,9 +80,9 @@ function HangingProfile({
         whileHover={
           enableMotion
             ? {
-                rotate: 0,
-                scale: 1,
-              }
+              rotate: 0,
+              scale: 1,
+            }
             : undefined
         }
         className="group relative"
@@ -91,8 +91,8 @@ function HangingProfile({
           animate={
             enableMotion
               ? {
-                  rotate: [-2, 1.5, -2],
-                }
+                rotate: [-2, 1.5, -2],
+              }
               : undefined
           }
           transition={{
@@ -429,13 +429,20 @@ export default function Hero() {
         <div
           className="
             relative
-            flex
-            h-[600px]
-            w-full
-            items-center
-            justify-center
-            lg:h-[500px]
-          "
+    -mx-6
+    flex
+    h-[430px]
+    w-[calc(100%+3rem)]
+    items-center
+    justify-center
+    overflow-hidden
+
+    sm:mx-0
+    sm:h-[520px]
+    sm:w-full
+
+    lg:h-[500px]
+  "
         >
           <OrbitSystem />
         </div>
